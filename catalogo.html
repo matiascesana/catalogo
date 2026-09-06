@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+<title>Catálogo de Productos</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   CONFIGURACIÓN RÁPIDA — editá acá el nombre del local, el
+   número de WhatsApp y cada cuánto se refresca el catálogo.
+   (los valores reales están al final del archivo, en <script>)
+   ============================================================ */
+
+:root{
+    --ink:#2c1a22;
+    --ink-soft:#5c4650;
+    --rose:#a8586a;
+    --rose-deep:#7d3a4a;
+    --gold:#a9863f;
+    --cream:#faf5ef;
+    --cream-deep:#f1e8de;
+    --card:#ffffff;
+    --line:#ecdfd5;
+    --ok:#3f6b3f;
+    --ok-bg:#e9f2e6;
+    --low:#a86a1c;
+    --low-bg:#faefdb;
+    --out:#a4453f;
+    --out-bg:#f7e8e5;
+    --shadow: 0 10px 30px -12px rgba(44,26,34,0.18);
+    --shadow-sm: 0 2px 10px rgba(44,26,34,0.08);
+    --radius: 18px;
+}
+
+*{ box-sizing:border-box; }
+
+html{ scroll-behavior:smooth; }
+
+body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Inter', -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:60px;
+}
+
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-thumb{ background:#d8c6ba; border-radius:10px; }
+
+h1,h2,h3{ font-family:'Fraunces', serif; margin:0; }
+
+/* ---------- Header ---------- */
+.hero{
+    background:
+        radial-gradient(circle at 15% 20%, rgba(255,255,255,0.10) 0, transparent 45%),
+        linear-gradient(160deg, var(--rose-deep) 0%, var(--ink) 100%);
+    color:#fff;
+    padding:34px 20px 26px;
+    position:relative;
+    overflow:hidden;
+}
+.hero-eyebrow{
+    font-size:0.78rem;
+    color:#eccfd6;
+    font-weight:600;
+    margin-bottom:6px;
+}
+.hero h1{
+    font-size:1.85rem;
+    font-weight:600;
+    line-height:1.15;
+    letter-spacing:-0.01em;
+}
+.hero p{
+    margin:10px 0 0;
+    color:#e9d7dc;
+    font-size:0.92rem;
+    max-width:46ch;
+}
+.hero-meta{
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+}
+.hero-pill{
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.25);
+    color:#fff;
+    padding:6px 12px;
+    border-radius:100px;
+    font-size:0.78rem;
+    font-weight:600;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+}
+.hero-refresh{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.35);
+    color:#fff;
+    padding:6px 12px;
+    border-radius:100px;
+    font-size:0.78rem;
+    font-weight:600;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:0.2s;
+}
+.hero-refresh:hover{ background:rgba(255,255,255,0.16); }
+.hero-refresh.spinning svg{ animation:spin 0.9s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ---------- Buscador ---------- */
+.search-wrap{
+    padding:16px 20px 0;
+    max-width:1100px;
+    margin:0 auto;
+}
+.search-box{
+    position:relative;
+    margin-top:-32px;
+    z-index:5;
+}
+.search-box input{
+    width:100%;
+    padding:15px 18px 15px 46px;
+    border-radius:16px;
+    border:1px solid var(--line);
+    background:var(--card);
+    box-shadow:var(--shadow);
+    font-size:0.98rem;
+    font-family:inherit;
+    color:var(--ink);
+}
+.search-box input:focus{ outline:2px solid var(--rose); outline-offset:1px; }
+.search-box svg{
+    position:absolute;
+    left:16px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--ink-soft);
+}
+
+/* ---------- Filtros (categoría + tipo) ---------- */
+.filters-outer{
+    position:sticky;
+    top:0;
+    z-index:20;
+    background:var(--cream);
+    padding:14px 20px 14px;
+    border-bottom:1px solid var(--line);
+}
+.filters-inner{
+    max-width:1100px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+}
+.filter-field{ display:flex; flex-direction:column; gap:4px; }
+.filter-field label{
+    font-size:0.72rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    padding-left:2px;
+}
+.filter-field select{
+    width:100%;
+    padding:12px 14px;
+    border-radius:12px;
+    border:1.5px solid var(--line);
+    background:var(--card);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:0.9rem;
+    font-weight:600;
+    appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235c4650' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 12px center;
+    background-size:16px;
+    padding-right:34px;
+}
+.filter-field select:focus{ outline:2px solid var(--rose); outline-offset:1px; }
+.filter-field select.is-active{ border-color:var(--rose); background-color:#fdf6f4; }
+
+/* ---------- Contenido ---------- */
+.container{
+    max-width:1100px;
+    margin:0 auto;
+    padding:26px 20px 10px;
+}
+
+.category-section{ margin-bottom:38px; scroll-margin-top:74px; }
+.category-title{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:16px;
+}
+.category-title h2{
+    font-size:1.35rem;
+    font-weight:600;
+    color:var(--ink);
+}
+.category-count{
+    color:var(--ink-soft);
+    font-size:0.82rem;
+    font-weight:500;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:14px;
+}
+@media (min-width:560px){ .grid{ grid-template-columns:repeat(3, 1fr); gap:16px; } }
+@media (min-width:820px){ .grid{ grid-template-columns:repeat(4, 1fr); } }
+@media (min-width:1080px){ .grid{ grid-template-columns:repeat(5, 1fr); } }
+
+.product-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:var(--shadow-sm);
+    border:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    transition:transform 0.15s ease, box-shadow 0.15s ease;
+}
+.product-card.out-of-stock{ opacity:0.72; }
+.product-card:hover{ transform:translateY(-2px); box-shadow:var(--shadow); }
+
+.product-img-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    background:var(--cream-deep);
+    overflow:hidden;
+}
+.product-img-wrap img{
+    width:100%; height:100%;
+    object-fit:cover;
+    display:block;
+    cursor:zoom-in;
+}
+.product-img-wrap .no-img{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100%;
+    color:#c9b8ab;
+}
+.discount-badge{
+    position:absolute;
+    top:8px;
+    left:8px;
+    background:var(--rose-deep);
+    color:#fff;
+    font-size:0.72rem;
+    font-weight:700;
+    padding:4px 8px;
+    border-radius:8px;
+}
+
+.product-info{
+    padding:12px 12px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    flex:1;
+}
+.product-name{
+    font-size:0.9rem;
+    font-weight:600;
+    line-height:1.28;
+    color:var(--ink);
+    min-height:2.3em;
+}
+.price-row{
+    display:flex;
+    align-items:baseline;
+    gap:7px;
+    flex-wrap:wrap;
+    margin-top:2px;
+}
+.price-now{
+    font-family:'Fraunces', serif;
+    font-size:1.18rem;
+    font-weight:600;
+    color:var(--rose-deep);
+}
+.price-old{
+    font-size:0.8rem;
+    color:#a89a94;
+    text-decoration:line-through;
+}
+.stock-badge{
+    align-self:flex-start;
+    margin-top:auto;
+    padding-top:8px;
+    font-size:0.75rem;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    gap:5px;
+}
+.stock-badge .dot{
+    width:7px; height:7px; border-radius:50%; flex:0 0 auto;
+}
+.stock-ok{ color:var(--ok); }
+.stock-ok .dot{ background:var(--ok); }
+.stock-low{ color:var(--low); }
+.stock-low .dot{ background:var(--low); }
+.stock-out{ color:var(--out); }
+.stock-out .dot{ background:var(--out); }
+
+/* ---------- Estados ---------- */
+.state-box{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+}
+.state-box h3{ font-size:1.1rem; margin-bottom:6px; color:var(--ink); }
+.state-box p{ font-size:0.9rem; margin:0 0 16px; }
+.state-box button{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    padding:10px 20px;
+    border-radius:100px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+}
+
+.skeleton-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:14px;
+}
+@media (min-width:560px){ .skeleton-grid{ grid-template-columns:repeat(3, 1fr); } }
+.skeleton-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    overflow:hidden;
+    border:1px solid var(--line);
+}
+.skeleton-img{ width:100%; aspect-ratio:1/1; background:linear-gradient(90deg,#efe4d9 25%,#f7efe7 37%,#efe4d9 63%); background-size:400% 100%; animation:shimmer 1.4s infinite; }
+.skeleton-line{ height:11px; margin:12px; border-radius:6px; background:linear-gradient(90deg,#efe4d9 25%,#f7efe7 37%,#efe4d9 63%); background-size:400% 100%; animation:shimmer 1.4s infinite; }
+.skeleton-line.short{ width:50%; }
+@keyframes shimmer{ 0%{background-position:100% 0;} 100%{background-position:-100% 0;} }
+
+/* ---------- Footer / WhatsApp ---------- */
+footer{
+    text-align:center;
+    padding:30px 20px 10px;
+    color:var(--ink-soft);
+    font-size:0.8rem;
+}
+
+.wa-float{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    background:#3f6b3f;
+    color:#fff;
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 8px 22px rgba(0,0,0,0.25);
+    z-index:30;
+    text-decoration:none;
+}
+.wa-float svg{ width:28px; height:28px; }
+
+.hidden{ display:none !important; }
+
+/* ---------- Lightbox (ver imagen ampliada) ---------- */
+#lightbox{
+    position:fixed;
+    inset:0;
+    background:rgba(20,10,14,0.88);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:26px;
+    z-index:9999;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.22s ease;
+}
+#lightbox.show{ opacity:1; pointer-events:auto; }
+#lightbox img{
+    max-width:100%;
+    max-height:80vh;
+    border-radius:14px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.5);
+    transform:scale(0.94);
+    transition:transform 0.22s ease;
+}
+#lightbox.show img{ transform:scale(1); }
+#lightbox .lightbox-caption{
+    position:absolute;
+    bottom:34px;
+    left:0; right:0;
+    text-align:center;
+    color:#fff;
+    font-size:0.85rem;
+    font-weight:600;
+    padding:0 24px;
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+    <div class="hero-eyebrow" id="heroEyebrow">CATÁLOGO</div>
+    <h1 id="storeName">Nuestro Catálogo</h1>
+    <p id="storeTagline">Precios y disponibilidad actualizados. Elegí una categoría o buscá el producto que necesitás.</p>
+    <div class="hero-meta">
+        <span class="hero-pill" id="monthPill">📅 —</span>
+        <button class="hero-refresh" id="refreshBtn" onclick="forceRefresh()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Actualizar
+        </button>
+    </div>
+</div>
+
+<div class="search-wrap">
+    <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchInput" placeholder="Buscar un producto..." oninput="handleSearch(this.value)" />
+    </div>
+</div>
+
+<div class="filters-outer">
+    <div class="filters-inner">
+        <div class="filter-field">
+            <label for="categoriaSelect">Categoría</label>
+            <select id="categoriaSelect" onchange="handleCategoriaChange(this.value)">
+                <option value="" disabled selected>Elegí una categoría</option>
+            </select>
+        </div>
+        <div class="filter-field">
+            <label for="tipoSelect">Tipo de producto</label>
+            <select id="tipoSelect" onchange="handleTipoChange(this.value)">
+                <option value="" disabled selected>Elegí un tipo</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="container" id="container">
+    <div class="skeleton-grid" id="skeleton">
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+        <div class="skeleton-card"><div class="skeleton-img"></div><div class="skeleton-line"></div><div class="skeleton-line short"></div></div>
+    </div>
+    <div id="content"></div>
+</div>
+
+<footer id="mainFooter">
+    Catálogo generado automáticamente · los precios y el stock pueden variar sin previo aviso
+</footer>
+
+<a href="#" id="waFloat" class="wa-float hidden" target="_blank" rel="noopener">
+    <svg viewBox="0 0 32 32" fill="#fff"><path d="M16 .3C7.4.3.4 7.3.4 16c0 2.8.7 5.5 2.1 7.9L.3 32l8.3-2.2c2.3 1.3 4.9 1.9 7.5 1.9 8.6 0 15.6-7 15.6-15.7C31.7 7.3 24.6.3 16 .3zm0 28.6c-2.4 0-4.7-.6-6.7-1.8l-.5-.3-5 1.3 1.3-4.9-.3-.5c-1.3-2.1-2-4.6-2-7.1 0-7.2 5.9-13.1 13.2-13.1S29.2 8.8 29.2 16 23.3 28.9 16 28.9zm7.3-9.9c-.4-.2-2.3-1.2-2.7-1.3-.4-.1-.6-.2-.9.2-.3.4-1 1.3-1.3 1.5-.2.3-.5.3-.9.1-.4-.2-1.7-.6-3.2-2-1.2-1.1-2-2.4-2.2-2.8-.2-.4 0-.6.2-.8.2-.2.4-.5.6-.7.2-.2.3-.4.4-.7.1-.3.1-.5 0-.7-.1-.2-.9-2.2-1.3-3-.3-.8-.7-.6-.9-.7h-.8c-.3 0-.7.1-1.1.5-.4.4-1.4 1.4-1.4 3.4s1.4 3.9 1.6 4.2c.2.3 2.8 4.2 6.7 5.9.9.4 1.7.6 2.3.8.9.3 1.8.2 2.4.1.7-.1 2.3-.9 2.6-1.9.3-.9.3-1.7.2-1.9-.1-.2-.3-.3-.7-.5z"/></svg>
+</a>
+
+<div id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   CONFIGURACIÓN — EDITAR ACÁ
+   ============================================================ */
+const SUPABASE_URL = "https://rgbjinmllhhymczumwhs.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnYmppbm1sbGhoeW1jenVtd2hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMwNDA5MDcsImV4cCI6MjA3ODYxNjkwN30.y7uSk4gEVJNbPvuLDC0ZXOyA8OhogptbKAofodxgV1w";
+
+const STORE_NAME = "Nuestro Catálogo";           // Nombre que aparece arriba de todo
+const STORE_TAGLINE = "Precios y disponibilidad actualizados. Elegí una categoría o buscá el producto que necesitás.";
+const WHATSAPP_NUMBER = "";                        // Ej: "5491122223333" (con código de país, sin + ni espacios). Dejalo vacío "" para ocultar el botón.
+const LOW_STOCK_THRESHOLD = 3;                     // A partir de qué cantidad se muestra "últimas unidades"
+const CACHE_MINUTES = 15;                          // Cada cuánto se vuelve a consultar Supabase (mientras tanto usa datos guardados en el celular)
+
+/* ============================================================
+   NO HACE FALTA TOCAR NADA DE ACÁ PARA ABAJO
+   ============================================================ */
+
+document.getElementById('storeName').textContent = STORE_NAME;
+document.getElementById('storeTagline').textContent = STORE_TAGLINE;
+document.title = STORE_NAME;
+
+if (WHATSAPP_NUMBER) {
+    const wa = document.getElementById('waFloat');
+    wa.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola! Vi el catálogo y quería consultar por un producto.')}`;
+    wa.classList.remove('hidden');
+}
+
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const now = new Date();
+document.getElementById('monthPill').textContent = `📅 Catálogo de ${MESES[now.getMonth()]} ${now.getFullYear()}`;
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const CACHE_KEY = 'catalogo_publico_cache_v4';
+
+let categorias = [];
+let tipos = [];
+let productos = [];
+let activeCategoryId = '';
+let activeTipoId = '';
+let searchTerm = '';
+
+function money(n){
+    const v = Number(n) || 0;
+    return v.toLocaleString('es-AR', { maximumFractionDigits: 0 });
+}
+
+function stockInfo(stock){
+    const s = Number(stock);
+    if (!s || s <= 0) return { cls:'stock-out', label:'Sin stock' };
+    if (s <= LOW_STOCK_THRESHOLD) return { cls:'stock-low', label:`Últimas unidades (${s})` };
+    return { cls:'stock-ok', label:`Disponible · Stock: ${s}` };
+}
+
+// Trae TODAS las filas de 'promociones', paginando de a 1000 (límite de Supabase por consulta).
+// Si hay, por ejemplo, 2400 productos, esto hace 3 consultas — nunca más de las necesarias.
+async function fetchAllProductos(){
+    let all = [];
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+        const { data, error } = await supabaseClient
+            .from('promociones')
+            .select('id, nombre, precio, precio_anterior, stock, imagen_url, imagen, categoria_id, tipo_id')
+            .range(from, from + pageSize - 1);
+        if (error) throw error;
+        all = all.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+    }
+    return all;
+}
+
+async function loadData(forceFresh){
+    // 1. Intentamos usar la caché local para no golpear Supabase en cada visita
+    if (!forceFresh) {
+        try {
+            const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+            if (cached && (Date.now() - cached.ts) < CACHE_MINUTES * 60 * 1000) {
+                categorias = cached.categorias;
+                tipos = cached.tipos;
+                productos = cached.productos;
+                return true;
+            }
+        } catch (e) { /* caché corrupta, seguimos a la consulta real */ }
+    }
+
+    // 2. Categorías y tipos son tablas chicas (1 consulta cada una). Los productos se
+    //    traen completos aunque haya miles, paginando internamente en fetchAllProductos().
+    try {
+        const [catRes, tipoRes, allProductos] = await Promise.all([
+            supabaseClient.from('categorias').select('id, nombre').order('nombre'),
+            supabaseClient.from('tipos_producto').select('id, nombre').order('nombre'),
+            fetchAllProductos()
+        ]);
+
+        if (catRes.error || tipoRes.error) {
+            console.error(catRes.error || tipoRes.error);
+            return false;
+        }
+
+        categorias = catRes.data || [];
+        tipos = tipoRes.data || [];
+        productos = allProductos || [];
+
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), categorias, tipos, productos }));
+        } catch (e) { /* si el storage está lleno (catálogos muy grandes), seguimos sin caché */ }
+
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
+function renderFilterSelects(){
+    const catCounts = {};
+    const tipoCounts = {};
+    productos.forEach(p => {
+        catCounts[p.categoria_id] = (catCounts[p.categoria_id] || 0) + 1;
+        tipoCounts[p.tipo_id] = (tipoCounts[p.tipo_id] || 0) + 1;
+    });
+
+    const catSelect = document.getElementById('categoriaSelect');
+    const tipoSelect = document.getElementById('tipoSelect');
+
+    catSelect.innerHTML = `<option value="" disabled ${!activeCategoryId ? 'selected' : ''}>Elegí una categoría</option>` +
+        categorias.filter(c => catCounts[c.id]).map(c =>
+            `<option value="${c.id}" ${String(activeCategoryId)===String(c.id) ? 'selected' : ''}>${escapeHtml(c.nombre)} (${catCounts[c.id]})</option>`
+        ).join('');
+
+    tipoSelect.innerHTML = `<option value="" disabled ${!activeTipoId ? 'selected' : ''}>Elegí un tipo</option>` +
+        tipos.filter(t => tipoCounts[t.id]).map(t =>
+            `<option value="${t.id}" ${String(activeTipoId)===String(t.id) ? 'selected' : ''}>${escapeHtml(t.nombre)} (${tipoCounts[t.id]})</option>`
+        ).join('');
+
+    catSelect.classList.toggle('is-active', !!activeCategoryId);
+    tipoSelect.classList.toggle('is-active', !!activeTipoId);
+}
+
+// Categoría y tipo son excluyentes: elegir una limpia la otra, para que nunca
+// se pisen ni generen resultados confusos.
+function handleCategoriaChange(value){
+    activeCategoryId = value;
+    activeTipoId = '';
+    searchTerm = '';
+    document.getElementById('searchInput').value = '';
+    renderFilterSelects();
+    renderContent();
+    window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function handleTipoChange(value){
+    activeTipoId = value;
+    activeCategoryId = '';
+    searchTerm = '';
+    document.getElementById('searchInput').value = '';
+    renderFilterSelects();
+    renderContent();
+    window.scrollTo({ top:0, behavior:'smooth' });
+}
+
+// Esta tienda arma la URL de la imagen directamente con el nombre de archivo
+// guardado en la columna 'imagen' del bucket público 'promo_images' (así es
+// como lo hace tu otro catálogo que sí muestra todas las fotos correctamente).
+// Si por algún motivo no hay 'imagen', probamos con 'imagen_url' como respaldo.
+function resolveImageUrl(p){
+    if (p.imagen && String(p.imagen).trim()) {
+        const nombreArchivo = String(p.imagen).trim();
+        return `https://rgbjinmllhhymczumwhs.supabase.co/storage/v1/object/public/promo_images/${encodeURI(nombreArchivo)}`;
+    }
+
+    let url = (p.imagen_url || '').trim();
+    if (!url) return '';
+    if (url.startsWith('http://')) url = 'https://' + url.slice(7);
+    return encodeURI(url);
+}
+function productCard(p){
+    const info = stockInfo(p.stock);
+    const hasDiscount = p.precio_anterior && Number(p.precio_anterior) > Number(p.precio);
+    const pct = hasDiscount ? Math.round((1 - (p.precio / p.precio_anterior)) * 100) : 0;
+    const imgUrl = resolveImageUrl(p);
+    const safeName = escapeHtml(p.nombre || 'Producto');
+
+    return `
+    <div class="product-card ${info.cls==='stock-out'?'out-of-stock':''}">
+        <div class="product-img-wrap">
+            ${imgUrl
+                ? `<img src="${imgUrl}" alt="${safeName}" loading="lazy" onclick="openLightbox('${imgUrl.replace(/'/g,"\\'")}', '${safeName.replace(/'/g,"\\'")}')" onerror="this.parentElement.innerHTML='<div class=&quot;no-img&quot;>Sin imagen</div>'">`
+                : `<div class="no-img">Sin imagen</div>`}
+            ${hasDiscount ? `<div class="discount-badge">-${pct}%</div>` : ''}
+        </div>
+        <div class="product-info">
+            <div class="product-name">${safeName}</div>
+            <div class="price-row">
+                <span class="price-now">$${money(p.precio)}</span>
+                ${hasDiscount ? `<span class="price-old">$${money(p.precio_anterior)}</span>` : ''}
+            </div>
+            <div class="stock-badge ${info.cls}"><span class="dot"></span>${info.label}</div>
+        </div>
+    </div>`;
+}
+
+// Dentro de un mismo listado, mostramos primero lo que tiene stock disponible
+const sortByStock = (a,b) => {
+    const aOut = (Number(a.stock)||0) <= 0, bOut = (Number(b.stock)||0) <= 0;
+    if (aOut !== bOut) return aOut ? 1 : -1;
+    return (a.nombre||'').localeCompare(b.nombre||'', 'es');
+};
+
+function renderContent(){
+    const content = document.getElementById('content');
+
+    // Buscar tiene prioridad: si el cliente está escribiendo, mostramos resultados
+    // de búsqueda sin importar categoría/tipo (para eso limpiamos los selects).
+    if (searchTerm.trim().length > 0) {
+        const t = searchTerm.trim().toLowerCase();
+        const list = productos.filter(p => (p.nombre || '').toLowerCase().includes(t));
+
+        if (list.length === 0) {
+            content.innerHTML = `
+            <div class="state-box">
+                <h3>No encontramos productos</h3>
+                <p>Probá con otra palabra.</p>
+            </div>`;
+            return;
+        }
+
+        content.innerHTML = `
+        <div class="category-section">
+            <div class="category-title"><h2>Resultados</h2><span class="category-count">${list.length} producto${list.length!==1?'s':''}</span></div>
+            <div class="grid">${[...list].sort(sortByStock).map(productCard).join('')}</div>
+        </div>`;
+        return;
+    }
+
+    // Sin categoría ni tipo elegido: pedimos que elija uno (con más de mil productos,
+    // no tiene sentido ni es liviano mostrar todo junto).
+    if (!activeCategoryId && !activeTipoId) {
+        content.innerHTML = `
+        <div class="state-box">
+            <h3>Elegí una categoría o un tipo</h3>
+            <p>Seleccioná una opción arriba, o buscá el producto por su nombre.</p>
+        </div>`;
+        return;
+    }
+
+    let list = productos;
+    let title = '';
+
+    if (activeCategoryId) {
+        list = productos.filter(p => String(p.categoria_id) === String(activeCategoryId));
+        const cat = categorias.find(c => String(c.id) === String(activeCategoryId));
+        title = cat ? cat.nombre : 'Categoría';
+    } else if (activeTipoId) {
+        list = productos.filter(p => String(p.tipo_id) === String(activeTipoId));
+        const tipo = tipos.find(t => String(t.id) === String(activeTipoId));
+        title = tipo ? tipo.nombre : 'Tipo de producto';
+    }
+
+    if (list.length === 0) {
+        content.innerHTML = `
+        <div class="state-box">
+            <h3>No hay productos acá todavía</h3>
+            <p>Probá con otra categoría o tipo.</p>
+        </div>`;
+        return;
+    }
+
+    content.innerHTML = `
+    <div class="category-section">
+        <div class="category-title"><h2>${escapeHtml(title)}</h2><span class="category-count">${list.length} producto${list.length!==1?'s':''}</span></div>
+        <div class="grid">${[...list].sort(sortByStock).map(productCard).join('')}</div>
+    </div>`;
+}
+
+function handleSearch(value){
+    searchTerm = value;
+    if (value.trim().length > 0) {
+        activeCategoryId = '';
+        activeTipoId = '';
+        renderFilterSelects();
+    }
+    renderContent();
+}
+
+function escapeHtml(str){
+    return String(str ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+let lightboxTimer = null;
+function openLightbox(url, name){
+    const box = document.getElementById('lightbox');
+    document.getElementById('lightboxImg').src = url;
+    document.getElementById('lightboxCaption').textContent = name || '';
+    box.classList.add('show');
+
+    clearTimeout(lightboxTimer);
+    lightboxTimer = setTimeout(closeLightbox, 3000);
+}
+function closeLightbox(){
+    document.getElementById('lightbox').classList.remove('show');
+    clearTimeout(lightboxTimer);
+}
+
+function showError(){
+    document.getElementById('skeleton').classList.add('hidden');
+    document.getElementById('content').innerHTML = `
+    <div class="state-box">
+        <h3>No pudimos cargar el catálogo</h3>
+        <p>Revisá tu conexión a internet e intentá de nuevo.</p>
+        <button onclick="forceRefresh()">Reintentar</button>
+    </div>`;
+}
+
+async function forceRefresh(){
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('spinning');
+    btn.disabled = true;
+    const ok = await loadData(true);
+    btn.classList.remove('spinning');
+    btn.disabled = false;
+    if (ok) {
+        renderFilterSelects();
+        renderContent();
+    } else {
+        showError();
+    }
+}
+
+async function init(){
+    const ok = await loadData(false);
+    document.getElementById('skeleton').classList.add('hidden');
+    if (!ok) { showError(); return; }
+    renderFilterSelects();
+    renderContent();
+}
+
+init();
+</script>
+</body>
+</html>
