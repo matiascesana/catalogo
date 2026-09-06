@@ -71,6 +71,16 @@ h1,h2,h3{ font-family:'Fraunces', serif; margin:0; }
     font-weight:600;
     margin-bottom:6px;
 }
+.hero-logo{
+    display:block;
+    max-height:56px;
+    max-width:180px;
+    width:auto;
+    height:auto;
+    object-fit:contain;
+    margin-bottom:16px;
+    filter:drop-shadow(0 4px 10px rgba(0,0,0,0.25));
+}
 .hero h1{
     font-size:1.85rem;
     font-weight:600;
@@ -428,6 +438,7 @@ footer{
 <body>
 
 <div class="hero">
+    <img class="hero-logo" id="storeLogo" src="" alt="Logo" style="display:none;" onerror="this.style.display='none';">
     <div class="hero-eyebrow" id="heroEyebrow">CATÁLOGO</div>
     <h1 id="storeName">Nuestro Catálogo</h1>
     <p id="storeTagline">Precios y disponibilidad actualizados. Elegí una categoría o buscá el producto que necesitás.</p>
@@ -497,6 +508,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 const STORE_NAME = "Nuestro Catálogo";           // Nombre que aparece arriba de todo
 const STORE_TAGLINE = "Precios y disponibilidad actualizados. Elegí una categoría o buscá el producto que necesitás.";
+const LOGO_URL = "https://rgbjinmllhhymczumwhs.supabase.co/storage/v1/object/public/promo_images/logodistribuidora.png"; // El mismo logo que usás en index_tienda. Dejalo vacío "" para no mostrar logo.
 const WHATSAPP_NUMBER = "";                        // Ej: "5491122223333" (con código de país, sin + ni espacios). Dejalo vacío "" para ocultar el botón.
 const LOW_STOCK_THRESHOLD = 3;                     // A partir de qué cantidad se muestra "últimas unidades"
 const CACHE_MINUTES = 15;                          // Cada cuánto se vuelve a consultar Supabase (mientras tanto usa datos guardados en el celular)
@@ -506,6 +518,11 @@ const CACHE_MINUTES = 15;                          // Cada cuánto se vuelve a c
    ============================================================ */
 
 document.getElementById('storeName').textContent = STORE_NAME;
+if (LOGO_URL) {
+    const logoEl = document.getElementById('storeLogo');
+    logoEl.src = LOGO_URL;
+    logoEl.style.display = 'block';
+}
 document.getElementById('storeTagline').textContent = STORE_TAGLINE;
 document.title = STORE_NAME;
 
