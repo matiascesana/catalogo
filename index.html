@@ -36,10 +36,14 @@ button{font-family:inherit}
 .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--soft)}
 .search input{width:100%;padding:11px 12px 11px 38px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font:inherit;font-size:.92rem;color:var(--ink)}
 .btn-order{background:var(--wine);color:#fff;text-decoration:none;font-weight:700;font-size:.85rem;padding:0 14px;border-radius:10px;display:flex;align-items:center;gap:6px;white-space:nowrap}
-.tabs{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;padding:0 12px 10px;max-width:880px;margin:0 auto}
-.tab-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1.5px solid var(--wine);background:var(--paper);color:var(--wine);padding:11px 14px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;min-width:0}
+.tabs{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px;padding:0 12px 10px;max-width:880px;margin:0 auto}
+.tab-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;border:1.5px solid var(--wine);background:var(--paper);color:var(--wine);padding:11px 10px;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;min-width:0}
 .tab-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tab-btn.on{background:var(--wine);color:#fff}
+.tab-promo{border:0;background:linear-gradient(135deg,#e2b94f,#c8932a);color:#2c1a22;font-weight:800;font-size:.85rem;padding:0 12px;border-radius:10px;cursor:pointer;box-shadow:0 2px 6px rgba(169,134,63,.5)}
+.tab-promo.on{background:var(--ink);color:#f2cf75}
+.promo-hero{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:360px;margin:18px auto 0;border:2px solid #fff3c9;background:linear-gradient(135deg,#f0cb68,#c8932a);color:#2c1a22;font-family:var(--serif);font-weight:700;font-size:1.15rem;padding:15px 18px;border-radius:14px;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.35)}
+.promo-hero:active{transform:scale(.98)}
 .tab-idx{border:1.5px dashed var(--soft);background:transparent;color:var(--soft);padding:0 12px;border-radius:10px;font-size:.82rem;font-weight:600;cursor:pointer}
 .tab-idx.on{background:var(--ink);border-style:solid;border-color:var(--ink);color:#fff}
 
@@ -142,6 +146,7 @@ button{font-family:inherit}
   <h1 id="storeName">Nuestro Catálogo</h1>
   <p id="storeTagline"></p>
   <span class="month" id="monthPill"></span>
+  <button class="promo-hero" onclick="goPromo()">★ <span id="promoLabel">Promociones del mes</span></button>
 </header>
 
 <nav class="bar">
@@ -201,8 +206,19 @@ document.title = STORE_NAME;
 if (LOGO_URL) { const l = document.getElementById('storeLogo'); l.src = LOGO_URL; l.style.display = 'block'; }
 if (WHATSAPP_NUMBER) { const w = document.getElementById('waFloat'); w.href = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent('Hola! Vi el catálogo y quería consultar por un producto.')}`; w.classList.remove('hidden'); }
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
-const now = new Date();
-document.getElementById('monthPill').textContent = `Catálogo de ${MESES[now.getMonth()]} ${now.getFullYear()}`;
+const mesActual = () => MESES[new Date().getMonth()];
+function updateMonth(){
+  const d = new Date(), m = MESES[d.getMonth()];
+  const pill = document.getElementById('monthPill'), promo = document.getElementById('promoLabel');
+  const txt = `Catálogo de ${m} ${d.getFullYear()}`;
+  if (pill.textContent === txt) return;
+  pill.textContent = txt;
+  promo.textContent = `Promociones de ${m}`;
+  if (window.catalogReady && mode === 'promo') renderContent();
+}
+updateMonth();
+setInterval(updateMonth, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) updateMonth(); });
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const CACHE_KEY = 'catalogo_publico_cache_v4';
@@ -273,11 +289,20 @@ const sortStock = (a, b) => {
   const ao = (Number(a.stock) || 0) <= 0, bo = (Number(b.stock) || 0) <= 0;
   return ao !== bo ? (ao ? 1 : -1) : (a.nombre || '').localeCompare(b.nombre || '', 'es');
 };
+function promoList(){
+  const re = /promo|oferta/i;
+  const cat = categorias.find(c => (c.nombre || '').trim().toLowerCase() === 'promociones') || categorias.find(c => re.test(c.nombre || ''));
+  if (cat) return productos.filter(p => String(p.categoria_id) === String(cat.id));
+  const tipo = tipos.find(t => re.test(t.nombre || ''));
+  if (tipo) return productos.filter(p => String(p.tipo_id) === String(tipo.id));
+  return productos.filter(p => p.precio_anterior && Number(p.precio_anterior) > Number(p.precio));
+}
 function currentList(){
   if (searchTerm.trim()) {
     const t = searchTerm.trim().toLowerCase();
     return { title:'Resultados', list: productos.filter(p => (p.nombre || '').toLowerCase().includes(t)) };
   }
+  if (mode === 'promo') return { title: `Promociones de ${mesActual()}`, list: promoList() };
   if (!activeId) return null;
   const key = mode === 'cat' ? 'categoria_id' : 'tipo_id';
   const src = mode === 'cat' ? categorias : tipos;
@@ -290,6 +315,7 @@ function renderTabs(){
   const sel = (m, arr) => { if (mode !== m || !activeId || searchTerm) return null; const f = arr.find(x => String(x.id) === String(activeId)); return f ? f.nombre : null; };
   const c = sel('cat', categorias), t = sel('tipo', tipos);
   $('tabs').innerHTML =
+    `<button class="tab-promo ${mode === 'promo' && !searchTerm ? 'on' : ''}" onclick="goPromo()">★ Promos</button>` +
     `<button class="tab-btn ${c ? 'on' : ''}" onclick="openPicker('cat')"><span>${esc(c || 'Categorías')}</span><span>▾</span></button>` +
     `<button class="tab-btn ${t ? 'on' : ''}" onclick="openPicker('tipo')"><span>${esc(t || 'Tipos')}</span><span>▾</span></button>` +
     `<button class="tab-idx ${!activeId && !searchTerm ? 'on' : ''}" onclick="goIndex()">Índice</button>`;
@@ -356,7 +382,8 @@ function toSheetTop(){
 }
 
 /* ===== ACCIONES ===== */
-function goIndex(){ activeId = ''; searchTerm = ''; $('searchInput').value = ''; page = 1; renderContent(); toSheetTop(); }
+function goPromo(){ mode = 'promo'; activeId = 'promo'; searchTerm = ''; $('searchInput').value = ''; page = 1; renderContent(1); toSheetTop(); }
+function goIndex(){ if (mode === 'promo') mode = 'cat'; activeId = ''; searchTerm = ''; $('searchInput').value = ''; page = 1; renderContent(); toSheetTop(); }
 function openPicker(m){
   const arr = m === 'cat' ? categorias : tipos;
   const cnt = counts(m === 'cat' ? 'categoria_id' : 'tipo_id');
@@ -373,7 +400,7 @@ function pick(m, id){ closePicker(); mode = m; choose(id); }
 function choose(id){ activeId = id; searchTerm = ''; $('searchInput').value = ''; page = 1; renderContent(1); toSheetTop(); }
 function openFromIndex(m, id){ mode = m; choose(id); }
 function turn(d){ page += d; renderContent(d); toSheetTop(); }
-function onSearch(v){ searchTerm = v; page = 1; if (v.trim()) activeId = ''; renderContent(); }
+function onSearch(v){ searchTerm = v; page = 1; if (v.trim()) { activeId = ''; if (mode === 'promo') mode = 'cat'; } renderContent(); }
 
 /* Deslizar para pasar de página */
 let tx = null, ty = null;
@@ -410,6 +437,7 @@ async function retry(){
 (async function init(){
   const ok = await loadData(false);
   $('skeleton').classList.add('hidden');
+  window.catalogReady = ok;
   ok ? renderContent() : showError();
 })();
 </script>
